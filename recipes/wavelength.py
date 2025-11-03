@@ -35,17 +35,19 @@ def wavelength(
     freq = max(0.1, min(5.0, float(frequency)))
     ph = float(phase)
     
-    base = torch.stack(models, dim=0).mean(dim=0)
-    
-    result = base.clone()
-    
-    for i, model in enumerate(models):
-        # normalized position
+    # Compute normalized weights
+    weights = []
+    for i in range(n):
         pos = i / max(n - 1, 1)
-        # sine wave weight (0.5 to 1.0 range)
         wave = 0.5 + 0.5 * math.sin(2 * math.pi * freq * pos + ph)
-        weight = wave * s / n
-        delta = model - base
-        result = result + delta * weight
+        # Interpolate between uniform (1/n) and wave-modulated
+        w = (1 - s) / n + s * wave
+        weights.append(w)
     
+    # Normalize weights to sum to 1
+    total = sum(weights)
+    weights = [w / total for w in weights]
+    
+    # Weighted sum
+    result = sum(w * m for w, m in zip(weights, models))
     return result
