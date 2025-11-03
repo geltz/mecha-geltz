@@ -2,15 +2,15 @@
 Wavelength: oscillating influence cascade.
 
 Idea:
-- Apply sinusoidal weighting pattern across models.
+- Apply sinusoidal weighting pattern to model deltas from base.
 - Creates alternating strong/weak influence waves.
 - Produces more varied blending than monotonic decay.
 
 Computation:
 - base = mean of all models
-- Weight by sine wave phase across model sequence
+- For each model, compute delta from base
+- Add deltas with sine wave weights
 - Phase shift controls which models peak
-- Combines smooth blending with periodic emphasis
 """
 
 import torch
@@ -35,19 +35,14 @@ def wavelength(
     freq = max(0.1, min(5.0, float(frequency)))
     ph = float(phase)
     
-    # Compute normalized weights
-    weights = []
-    for i in range(n):
+    base = torch.stack(models, dim=0).mean(dim=0)
+    
+    result = base.clone()
+    for i, model in enumerate(models):
         pos = i / max(n - 1, 1)
         wave = 0.5 + 0.5 * math.sin(2 * math.pi * freq * pos + ph)
-        # Interpolate between uniform (1/n) and wave-modulated
-        w = (1 - s) / n + s * wave
-        weights.append(w)
+        weight = s * wave
+        delta = model - base
+        result = result + delta * weight / n
     
-    # Normalize weights to sum to 1
-    total = sum(weights)
-    weights = [w / total for w in weights]
-    
-    # Weighted sum
-    result = sum(w * m for w, m in zip(weights, models))
     return result
