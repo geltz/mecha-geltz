@@ -23,9 +23,9 @@ import math
 @merge_method
 def resonance(
     *models: Parameter(Tensor),
-    resonance: Parameter(float) = 0.8,
-    damping: Parameter(float) = 0.3,
-    bands: Parameter(int) = 8
+    resonance: Parameter(float) = 0.5,
+    damping: Parameter(float) = 0.5,
+    bands: Parameter(int) = 16
 ) -> Return(Tensor):
     n = len(models)
     if n == 0:
@@ -86,4 +86,5 @@ def resonance(
         
         result_flat[start:end] += band_result
     
+
     return result_flat.reshape(base.shape)
